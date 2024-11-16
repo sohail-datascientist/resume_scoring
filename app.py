@@ -20,7 +20,7 @@ nlp = spacy.load("en_core_web_sm")
 
 ###################### Start #######################
 # Llama 3.1 Initialization
-client = Groq(api_key="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")
+client = Groq(api_key="your_api_key")
 
 # Adjusted prompt for JSON output
 instruction = """
