@@ -4,8 +4,8 @@ import pandas as pd
 from sklearn.metrics.pairwise import cosine_similarity
 from transformers import BertTokenizer, BertModel
 import torch
-from groq import Groq
 import json
+import fitz  # PyMuPDF for PDF extraction
 
 # Set device for BERT model
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
@@ -53,20 +53,35 @@ def decode_file(file):
     except UnicodeDecodeError:
         return file.getvalue().decode("ISO-8859-1")
 
+# Function to extract text from PDF
+def extract_text_from_pdf(pdf_file):
+    pdf_document = fitz.open(pdf_file)
+    text = ""
+    for page_num in range(pdf_document.page_count):
+        page = pdf_document.load_page(page_num)
+        text += page.get_text("text")
+    return text
+
 # Streamlit App Interface
 st.title("Automated Resume Screening")
 
 # Upload Job Description
-jd_file = st.file_uploader("Upload Job Description (.txt)", type="txt")
+jd_file = st.file_uploader("Upload Job Description (.txt or .pdf)", type=["txt", "pdf"])
+
 # Upload Resumes (multiple files allowed)
-resume_files = st.file_uploader("Upload Resumes (.txt)", type="txt", accept_multiple_files=True)
+resume_files = st.file_uploader("Upload Resumes (.txt or .pdf)", type=["txt", "pdf"], accept_multiple_files=True)
 
 # Initialize variables for filtered data
 filtered_results = pd.DataFrame()
 
 # Process files and calculate similarity
 if jd_file and resume_files:
-    jd_content = decode_file(jd_file)
+    # Handle Job Description file upload (TXT or PDF)
+    if jd_file.type == "application/pdf":
+        jd_content = extract_text_from_pdf(jd_file)
+    else:
+        jd_content = decode_file(jd_file)
+    
     jd_content = preprocess_text(jd_content)
     jd_embedding = get_bert_embeddings(jd_content)
 
@@ -76,7 +91,13 @@ if jd_file and resume_files:
 
     for idx, resume_file in enumerate(resume_files):
         progress_bar.progress((idx + 1) / total_files)
-        resume_content = decode_file(resume_file)
+        
+        # Handle Resume file upload (TXT or PDF)
+        if resume_file.type == "application/pdf":
+            resume_content = extract_text_from_pdf(resume_file)
+        else:
+            resume_content = decode_file(resume_file)
+        
         resume_content = preprocess_text(resume_content)
         resume_embedding = get_bert_embeddings(resume_content)
 
