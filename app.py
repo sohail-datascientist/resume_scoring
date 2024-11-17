@@ -19,7 +19,6 @@ model = BertModel.from_pretrained('bert-base-uncased').to(device)
 client = Groq(api_key="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")
 
 # Adjusted prompt for JSON output
-# Updated prompt for JSON output
 instruction = """
 You are an AI bot designed to act as a professional for parsing resumes. 
 You are given a resume, and your job is to extract the following information in JSON format only:
@@ -31,7 +30,6 @@ You are given a resume, and your job is to extract the following information in 
     6. technical_skills
     7. soft_skills
     8. location "Please provide the location of the candidate's work experience or location mentioned in the resume"
-    9. similarity_factors "Mention the factors used for calculating the cosine similarity between JD and CV"
 Give the extracted information in JSON format only, without any additional commentary.
 """
 ###################### End #######################
@@ -143,77 +141,31 @@ if jd_file and resume_files:
             'designation': designation_str,
         })
 
-       # After creating the DataFrame and before filtering
     results_df = pd.DataFrame(results).sort_values(by='Similarity Score', ascending=False)
-    
-    # Split company names and technical skills into lists for filtering
-    results_df['company_names_list'] = results_df['company_names'].str.split(' - ')
-    results_df['technical_skills_list'] = results_df['technical_skills'].str.split(' - ')
-    
-    # Display original results
+
     st.write("### Original Results")
     st.dataframe(results_df)
-    
-    # Get universities, companies, and skills for filtering
+
     university_names = results_df['university_name'].dropna().unique()
     selected_universities = st.multiselect('Filter by Universities', university_names)
-    
+
     all_company_names = results_df['company_names'].str.split(' - ').explode().dropna().unique()
     selected_companies = st.multiselect('Filter by Companies', all_company_names)
-    
+
     all_skills = results_df['technical_skills'].str.split(' - ').explode().dropna().unique()
     selected_skills = st.multiselect('Filter by Skills', all_skills)
-    
-    # Ask the user how to combine filters
-    filter_logic = st.selectbox('Choose filter logic', ['AND', 'OR'])
-    
-    # Initialize filtered results with the original DataFrame
+
     filtered_results = results_df.copy()
-    
-    # Filter by universities
+
     if selected_universities:
         filtered_results = filtered_results[filtered_results['university_name'].isin(selected_universities)]
-    
-    # Filter by companies
+
     if selected_companies:
-        if filter_logic == 'AND':
-            filtered_results = filtered_results[filtered_results['company_names_list'].apply(
-                lambda x: all(company in x for company in selected_companies))]
-        else:  # OR logic
-            filtered_results = filtered_results[filtered_results['company_names_list'].apply(
-                lambda x: any(company in x for company in selected_companies))]
-    
-    # Filter by skills
+        filtered_results = filtered_results[filtered_results['company_names'].str.contains('|'.join(selected_companies), na=False)]
+
     if selected_skills:
-        if filter_logic == 'AND':
-            filtered_results = filtered_results[filtered_results['technical_skills_list'].apply(
-                lambda x: all(skill in x for skill in selected_skills))]
-        else:  # OR logic
-            filtered_results = filtered_results[filtered_results['technical_skills_list'].apply(
-                lambda x: any(skill in x for skill in selected_skills))]
-    
-    # Add a new column 'Similarity Factors' to both original and filtered DataFrames
-    def get_similarity_factors(row):
-        factors = []
-        jd_text = jd_file.getvalue().decode("utf-8")  # Assuming JD content is available
-        resume_text = decode_file(resume_files[0])  # Assuming the first resume is being processed
-    
-        # Check the factors for cosine similarity (e.g., JD vs Resume content)
-        if jd_text and resume_text:
-            jd_embedding = get_bert_embeddings(jd_text)
-            resume_embedding = get_bert_embeddings(resume_text)
-            similarity_score = cosine_similarity(jd_embedding, resume_embedding)[0][0]
-    
-            if similarity_score > 0.7:  # You can adjust this threshold
-                factors.append("JD vs CV Similarity")
-    
-        return " - ".join(factors) if factors else "No Factors"
-    
-    # Apply the similarity factor function to both DataFrames
-    results_df['Similarity Factors'] = results_df.apply(get_similarity_factors, axis=1)
-    filtered_results['Similarity Factors'] = filtered_results.apply(get_similarity_factors, axis=1)
-    
-    # Display filtered results
+        filtered_results = filtered_results[filtered_results['technical_skills'].str.contains('|'.join(selected_skills), na=False)]
+
     if not filtered_results.empty:
         st.write(f"### Filtered Results ({len(filtered_results)} candidates)")
         st.dataframe(filtered_results)
