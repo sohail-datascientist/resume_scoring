@@ -23,7 +23,7 @@ import os
 MODEL_NAME = "en_core_web_sm"
 
 # Define a custom path where the model will be stored (within your app's directory)
-model_path = os.path.join(os.getcwd(), "models", MODEL_NAME)
+model_path = os.path.join(os.getcwd(), MODEL_NAME)
 
 # Create the directory if it doesn't exist
 os.makedirs(model_path, exist_ok=True)
