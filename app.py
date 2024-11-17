@@ -56,11 +56,12 @@ def decode_file(file):
 
 # Function to extract text from PDF
 def extract_text_from_pdf(pdf_file):
-    pdf_document = fitz.open(pdf_file)
+    # Open the file directly as a BytesIO object
+    pdf_bytes = pdf_file.read()  # Read the BytesIO content
+    doc = fitz.open(stream=pdf_bytes, filetype="pdf")  # Use fitz.open() with stream argument
     text = ""
-    for page_num in range(pdf_document.page_count):
-        page = pdf_document.load_page(page_num)
-        text += page.get_text("text")
+    for page in doc:
+        text += page.get_text("text")  # Extract text from each page
     return text
 
 # Streamlit App Interface
