@@ -175,8 +175,8 @@ if jd_file and resume_files:
     all_company_names = results_df['company_names'].str.split(' - ').explode().dropna().unique()
     selected_companies = st.multiselect('Filter by Companies', all_company_names)
 
-    all_skills = results_df['technical_skills'].str.split(' - ').explode().dropna().unique()
-    selected_skills = st.multiselect('Filter by Skills', all_skills)
+    # all_skills = results_df['technical_skills'].str.split(' - ').explode().dropna().unique()
+    # selected_skills = st.multiselect('Filter by Skills', all_skills)
 
     filtered_results = results_df.copy()
 
