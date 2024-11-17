@@ -15,6 +15,16 @@ device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 tokenizer = BertTokenizer.from_pretrained('bert-base-uncased')
 model = BertModel.from_pretrained('bert-base-uncased').to(device)
 
+import spacy
+from spacy.cli import download
+
+# Check if the model is already downloaded, and if not, download it
+try:
+    nlp = spacy.load("en_core_web_sm")
+except OSError:
+    download("en_core_web_sm")
+    nlp = spacy.load("en_core_web_sm")
+
 # Load spaCy's pre-trained NER model for extracting entities
 nlp = spacy.load("en_core_web_sm")
 
