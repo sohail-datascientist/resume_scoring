@@ -22,17 +22,18 @@ import os
 # Define the model name
 MODEL_NAME = "en_core_web_sm"
 
-# Check if the model is already installed, if not, download it
+# Check if the model is installed, and if not, download it
 try:
-    # Try loading the model
     nlp = spacy.load(MODEL_NAME)
 except OSError:
-    # If the model is not installed, download it with proper permissions
-    download(MODEL_NAME)
-    nlp = spacy.load(MODEL_NAME)
+    print(f"Model {MODEL_NAME} not found. Downloading...")
+    download(MODEL_NAME)  # This downloads the model dynamically
+    nlp = spacy.load(MODEL_NAME)  # Reload the model after downloading
 
-# Load spaCy's pre-trained NER model for extracting entities
-nlp = spacy.load("en_core_web_sm")
+
+
+# # Load spaCy's pre-trained NER model for extracting entities
+# nlp = spacy.load("en_core_web_sm")
 
 ###################### Start #######################
 # Llama 3.1 Initialization
