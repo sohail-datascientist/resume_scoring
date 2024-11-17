@@ -16,7 +16,7 @@ model = BertModel.from_pretrained('bert-base-uncased').to(device)
 
 ###################### Start #######################
 # Llama 3.1 Initialization
-client = Groq(api_key="your_api_key")
+client = Groq(api_key="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")
 
 # Adjusted prompt for JSON output
 instruction = """
