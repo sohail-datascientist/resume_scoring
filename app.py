@@ -16,22 +16,24 @@ tokenizer = BertTokenizer.from_pretrained('bert-base-uncased')
 model = BertModel.from_pretrained('bert-base-uncased').to(device)
 
 import spacy
-from spacy.cli import download
-import os
+import subprocess
+import sys
 
 # Define the model name
 MODEL_NAME = "en_core_web_sm"
-
-# Get the current working directory
-current_working_directory = os.getcwd()
 
 # Check if the model is installed, and if not, download it
 try:
     nlp = spacy.load(MODEL_NAME)
 except OSError:
-    print(f"Model {MODEL_NAME} not found. Downloading to current working directory...")
-    download(MODEL_NAME, path=current_working_directory)  # Download model in the current directory
-    nlp = spacy.load(MODEL_NAME)  # Load the model from the current working directory
+    print(f"Model {MODEL_NAME} not found. Downloading...")
+    
+    # Download the model using subprocess to call the command-line spaCy command
+    subprocess.check_call([sys.executable, "-m", "spacy", "download", MODEL_NAME])
+    
+    # After downloading, load the model
+    nlp = spacy.load(MODEL_NAME)
+
 
 
 # # Load spaCy's pre-trained NER model for extracting entities
