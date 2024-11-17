@@ -151,10 +151,6 @@ if jd_file and resume_files:
     results_df['company_names_list'] = results_df['company_names'].str.split(' - ')
     results_df['technical_skills_list'] = results_df['technical_skills'].str.split(' - ')
     
-    # Display original results
-    st.write("### Original Results")
-    st.dataframe(results_df)
-    
     # Get universities, companies, and skills for filtering
     university_names = results_df['university_name'].dropna().unique()
     selected_universities = st.multiselect('Filter by Universities', university_names)
