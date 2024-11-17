@@ -17,13 +17,19 @@ model = BertModel.from_pretrained('bert-base-uncased').to(device)
 
 import spacy
 from spacy.cli import download
+import os
 
-# Check if the model is already downloaded, and if not, download it
+# Define the model name
+MODEL_NAME = "en_core_web_sm"
+
+# Check if the model is already installed, if not, download it
 try:
-    nlp = spacy.load("en_core_web_sm")
+    # Try loading the model
+    nlp = spacy.load(MODEL_NAME)
 except OSError:
-    download("en_core_web_sm")
-    nlp = spacy.load("en_core_web_sm")
+    # If the model is not installed, download it with proper permissions
+    download(MODEL_NAME)
+    nlp = spacy.load(MODEL_NAME)
 
 # Load spaCy's pre-trained NER model for extracting entities
 nlp = spacy.load("en_core_web_sm")
