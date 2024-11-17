@@ -144,28 +144,45 @@ if jd_file and resume_files:
     results_df = pd.DataFrame(results).sort_values(by='Similarity Score', ascending=False)
 
     st.write("### Original Results")
-    st.dataframe(results_df)
+    st.dataframe(results_df)# After creating the DataFrame and before filtering
 
+
+    # Split company names and technical skills into lists for filtering
+    results_df['company_names_list'] = results_df['company_names'].str.split(' - ')
+    results_df['technical_skills_list'] = results_df['technical_skills'].str.split(' - ')
+    
+    # Display original results
+    st.write("### Original Results")
+    st.dataframe(results_df)
+    
+    # Get universities, companies, and skills for filtering
     university_names = results_df['university_name'].dropna().unique()
     selected_universities = st.multiselect('Filter by Universities', university_names)
-
+    
     all_company_names = results_df['company_names'].str.split(' - ').explode().dropna().unique()
     selected_companies = st.multiselect('Filter by Companies', all_company_names)
-
+    
     all_skills = results_df['technical_skills'].str.split(' - ').explode().dropna().unique()
     selected_skills = st.multiselect('Filter by Skills', all_skills)
-
+    
+    # Initialize filtered results with the original DataFrame
     filtered_results = results_df.copy()
-
+    
+    # Filter by universities
     if selected_universities:
         filtered_results = filtered_results[filtered_results['university_name'].isin(selected_universities)]
-
+    
+    # Filter by companies
     if selected_companies:
-        filtered_results = filtered_results[filtered_results['company_names'].str.contains('|'.join(selected_companies), na=False)]
-
+        filtered_results = filtered_results[filtered_results['company_names_list'].apply(
+            lambda x: any(company in x for company in selected_companies))]
+    
+    # Filter by skills
     if selected_skills:
-        filtered_results = filtered_results[filtered_results['technical_skills'].str.contains('|'.join(selected_skills), na=False)]
-
+        filtered_results = filtered_results[filtered_results['technical_skills_list'].apply(
+            lambda x: any(skill in x for skill in selected_skills))]
+    
+    # Display filtered results
     if not filtered_results.empty:
         st.write(f"### Filtered Results ({len(filtered_results)} candidates)")
         st.dataframe(filtered_results)
