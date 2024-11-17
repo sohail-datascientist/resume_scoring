@@ -189,7 +189,7 @@ if jd_file and resume_files:
     # if selected_skills:
     #     filtered_results = filtered_results[filtered_results['technical_skills'].str.contains('|'.join(selected_skills), na=False)]
 
-    # if not filtered_results.empty:
+    if not filtered_results.empty:
         st.write(f"### Filtered Results ({len(filtered_results)} candidates)")
         st.dataframe(filtered_results)
     else:
