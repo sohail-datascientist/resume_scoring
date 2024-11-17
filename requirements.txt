@@ -1,7 +1,7 @@
 torch
 scikit-learn
 transformers
-Grokq
+Groq
 spacy
 PyMuPDF
 setuptools
