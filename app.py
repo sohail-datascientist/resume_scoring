@@ -184,7 +184,7 @@ if jd_file and resume_files:
         filtered_results = filtered_results[filtered_results['university_name'].isin(selected_universities)]
 
     if selected_companies:
-        filtered_results = filtered_results[filtered_results['company_names'].str.contains('|'.join(selected_companies), na=False)]
+        filtered_results = filtered_results[filtered_results['company_names'].isin(selected_companies)]
 
     # if selected_skills:
     #     filtered_results = filtered_results[filtered_results['technical_skills'].str.contains('|'.join(selected_skills), na=False)]
