@@ -4,6 +4,7 @@ import pandas as pd
 from sklearn.metrics.pairwise import cosine_similarity
 from transformers import BertTokenizer, BertModel
 import torch
+from groq import Groq
 import json
 import fitz  # PyMuPDF for PDF extraction
 
