@@ -1,3 +1,8 @@
 torch
 scikit-learn
 transformers
+Grokq
+spacy
+PyMuPDF
+setuptools
+wheel
