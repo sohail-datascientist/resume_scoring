@@ -15,29 +15,8 @@ device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 tokenizer = BertTokenizer.from_pretrained('bert-base-uncased')
 model = BertModel.from_pretrained('bert-base-uncased').to(device)
 
-import spacy
-import subprocess
-import sys
-
-# Define the model name
-MODEL_NAME = "en_core_web_sm"
-
-# Check if the model is installed, and if not, download it
-try:
-    nlp = spacy.load(MODEL_NAME)
-except OSError:
-    print(f"Model {MODEL_NAME} not found. Downloading...")
-    
-    # Download the model using subprocess to call the command-line spaCy command
-    subprocess.check_call([sys.executable, "-m", "spacy", "download", MODEL_NAME])
-    
-    # After downloading, load the model
-    nlp = spacy.load(MODEL_NAME)
-
-
-
 # # Load spaCy's pre-trained NER model for extracting entities
-# nlp = spacy.load("en_core_web_sm")
+nlp = spacy.load("en_core_web_sm")
 
 ###################### Start #######################
 # Llama 3.1 Initialization
