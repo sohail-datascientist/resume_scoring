@@ -22,21 +22,17 @@ import os
 # Define the model name
 MODEL_NAME = "en_core_web_sm"
 
-# Define a custom path where the model will be stored (within your app's directory)
-model_path = os.path.join(os.getcwd(), MODEL_NAME)
+# Get the current working directory
+current_working_directory = os.getcwd()
 
-# Create the directory if it doesn't exist
-os.makedirs(model_path, exist_ok=True)
-
-# Check if the model is installed, and if not, download it to the custom path
+# Check if the model is installed, and if not, download it
 try:
     nlp = spacy.load(MODEL_NAME)
 except OSError:
-    print(f"Model {MODEL_NAME} not found. Downloading...")
-    # Download model to the custom path
-    download(MODEL_NAME, path=model_path)
-    # After download, load the model from the custom directory
-    nlp = spacy.load(model_path)
+    print(f"Model {MODEL_NAME} not found. Downloading to current working directory...")
+    download(MODEL_NAME, path=current_working_directory)  # Download model in the current directory
+    nlp = spacy.load(MODEL_NAME)  # Load the model from the current working directory
+
 
 # # Load spaCy's pre-trained NER model for extracting entities
 # nlp = spacy.load("en_core_web_sm")
