@@ -6,7 +6,6 @@ from transformers import BertTokenizer, BertModel
 import torch
 from groq import Groq
 import json
-import spacy
 
 # Set device for BERT model
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
@@ -14,9 +13,6 @@ device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 # Load BERT model and tokenizer
 tokenizer = BertTokenizer.from_pretrained('bert-base-uncased')
 model = BertModel.from_pretrained('bert-base-uncased').to(device)
-
-# # Load spaCy's pre-trained NER model for extracting entities
-nlp = spacy.load("en_core_web_sm")
 
 ###################### Start #######################
 # Llama 3.1 Initialization
@@ -33,7 +29,7 @@ You are given a resume, and your job is to extract the following information in 
     5. employment_details (with fields: company, position, duration, location)
     6. technical_skills
     7. soft_skills
-    8. location
+    8. location "Please provide the location of the candidate's work experience or location mentioned in the resume"
 Give the extracted information in JSON format only, without any additional commentary.
 """
 ###################### End #######################
@@ -56,12 +52,6 @@ def decode_file(file):
         return file.getvalue().decode("utf-8")
     except UnicodeDecodeError:
         return file.getvalue().decode("ISO-8859-1")
-
-# Function to extract locations using spaCy
-def extract_locations(text):
-    doc = nlp(text)
-    locations = [ent.text for ent in doc.ents if ent.label_ in ['GPE', 'LOC']]
-    return locations if locations else ['N/A']
 
 # Streamlit App Interface
 st.title("Automated Resume Screening")
@@ -121,8 +111,7 @@ if jd_file and resume_files:
             designation = detail.get('position', 'N/A')
             location = detail.get('location', 'N/A')
             if location == 'N/A':
-                extracted_locations = extract_locations(resume_content)
-                location = extracted_locations[0] if extracted_locations else 'N/A'
+                location = result.get('location', 'N/A')  # Directly get location from the result
 
             company_names.append(company_name)
             locations.append(location)
