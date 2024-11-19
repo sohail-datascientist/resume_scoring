@@ -6,3 +6,5 @@ spacy
 PyMuPDF
 setuptools
 wheel
+matplotlib
+seaborn
