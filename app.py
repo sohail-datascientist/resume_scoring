@@ -9,8 +9,6 @@ import json
 import fitz  # PyMuPDF for PDF processing
 import matplotlib.pyplot as plt
 import seaborn as sns
-import plotly.express as px
-import plotly.graph_objects as go
 
 # Set device for BERT model
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
@@ -88,6 +86,7 @@ st.markdown("""
     .stButton>button {
         background-color: #3498db;
         color: white;
+        
         padding: 10px 20px;
         font-size: 16px;
         font-weight: bold;
@@ -203,73 +202,55 @@ if jd_file and resume_files:
     st.write("### Candidates")
     st.dataframe(results_df)
 
-        ######################### Filter Section ######################
-    st.write("### Apply Filters")
-        # Initialize session state for filters and results if not already done
-    if "filtered_df" not in st.session_state:
-        st.session_state.filtered_df = results_df  # Initialize with unfiltered data
-    
-    if "universities" not in st.session_state:
-        st.session_state.universities = []
-    if "companies" not in st.session_state:
-        st.session_state.companies = []
-    if "skills" not in st.session_state:
-        st.session_state.skills = []
-    
     ######################### Filter Section ######################
     # Multi-select filters for university, company, and skills
     st.write("### Apply Filters")
-    
+
     # Filters for universities and companies
-    universities = st.multiselect("Select Universities", options=results_df["university_name"].unique(), default=st.session_state.universities)
-    companies = st.multiselect("Select Companies", options=results_df["company_names"].explode().unique(), default=st.session_state.companies)
-    skills = st.multiselect("Select Skills", options=results_df['technical_skills'].explode().unique(), default=st.session_state.skills)
-    
-    # Update session state with current filter selections
-    st.session_state.universities = universities
-    st.session_state.companies = companies
-    st.session_state.skills = skills
-    
+    universities = st.multiselect("Select Universities", options=results_df["university_name"].unique())
+    companies = st.multiselect("Select Companies", options=results_df["company_names"].explode().unique())
+    skills = st.multiselect("Select Skills", options=results_df['technical_skills'].explode().unique())
+
     # Filter results based on selections
     filtered_df = results_df.copy()
-    
-    # Filter by University
+
     if universities:
         filtered_df = filtered_df[filtered_df["university_name"].isin(universities)]
-    
-    # Filter by Company
     if companies:
-        filtered_df = filtered_df[filtered_df['company_names'].apply(lambda x: any(company in companies for company in x))]
-    
-    # Filter by Skills
+        filtered_df = filtered_df[filtered_df['company_names'].apply(lambda x: any(company in x for company in companies))]
     if skills:
-        filtered_df = filtered_df[filtered_df['technical_skills'].apply(lambda x: any(skill in skills for skill in x))]
-    
-    # Save filtered DataFrame to session state
-    st.session_state.filtered_df = filtered_df
-    
-    # Display the filtered results
+        filtered_df = filtered_df[filtered_df['technical_skills'].apply(lambda x: any(skill in x for skill in skills))]
+
     st.write("### Filtered Candidates")
-    st.dataframe(st.session_state.filtered_df)
-    
+    st.dataframe(filtered_df)
+
     ######################### Resume Statistics Table ######################
     # Experience and university/company counts
     flattened_company_names = [company for sublist in filtered_df['company_names'] for company in sublist]
     unique_companies = list(set(flattened_company_names))
-    
+
     experience_counts = {
         "Fresh Candidate": 0,
         "Experienced": 0
     }
     for experience in filtered_df['experience']:
         experience_counts[experience] += 1
-    
+
     # Resume Statistics as a Table
     resume_stats = pd.DataFrame({
-        "Total Resumes": [len(filtered_df)],
+        "Total Resumes": [len(results_df)],
         "Fresh Candidates": [experience_counts['Fresh Candidate']],
         "Experienced Candidates": [experience_counts['Experienced']],
     })
-    
+
     st.write("### Resume Statistics")
     st.dataframe(resume_stats)
+
+    ######################### Pie Chart for Skills ######################
+    skill_counts = filtered_df['technical_skills'].explode().value_counts()
+    fig, ax = plt.subplots(figsize=(8, 6))
+    ax.pie(skill_counts, labels=skill_counts.index, autopct='%1.1f%%', startangle=90)
+    ax.axis('equal')  # Equal aspect ratio ensures that pie is drawn as a circle.
+
+    st.write("### Skill Distribution")
+    st.pyplot(fig)
