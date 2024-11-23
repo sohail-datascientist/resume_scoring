@@ -8,3 +8,4 @@ setuptools
 wheel
 matplotlib
 seaborn
+plotly==5.15.0
