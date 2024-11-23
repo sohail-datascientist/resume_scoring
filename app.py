@@ -6,7 +6,6 @@ from transformers import BertTokenizer, BertModel
 import torch
 from groq import Groq
 import json
-import spacy
 import fitz  # PyMuPDF for PDF processing
 import matplotlib.pyplot as plt
 import seaborn as sns
@@ -17,9 +16,6 @@ device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 # Load BERT model and tokenizer
 tokenizer = BertTokenizer.from_pretrained('bert-base-uncased')
 model = BertModel.from_pretrained('bert-base-uncased').to(device)
-
-# Load spaCy's pre-trained NER model for extracting entities
-#  = spacy.load("en_core_web_sm")
 
 ###################### Start #######################
 # Llama 3.1 Initialization
@@ -90,7 +86,6 @@ st.markdown("""
     .stButton>button {
         background-color: #3498db;
         color: white;
-        
         padding: 10px 20px;
         font-size: 16px;
         font-weight: bold;
