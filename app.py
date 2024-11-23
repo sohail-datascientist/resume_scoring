@@ -204,28 +204,34 @@ if jd_file and resume_files:
     st.dataframe(results_df)
 
     ######################### Filter Section ######################
-    # Multi-select filters for university, company, and skills
     st.write("### Apply Filters")
-
+    
     # Filters for universities and companies
     universities = st.multiselect("Select Universities", options=results_df["university_name"].unique())
     companies = st.multiselect("Select Companies", options=results_df["company_names"].explode().unique())
     skills = st.multiselect("Select Skills", options=results_df['technical_skills'].explode().unique())
-
+    
     # Filter results based on selections
     filtered_df = results_df.copy()
-
+    
+    # Filter by University
     if universities:
         filtered_df = filtered_df[filtered_df["university_name"].isin(universities)]
-        st.write("### Filtered Candidates")
+        st.write("### Filtered Candidates (By University)")
         st.dataframe(filtered_df)
-    if companies:
-        filtered_df = filtered_df[filtered_df['company_names'].apply(lambda x: any(company in x for company in companies))]
-        st.write("### Filtered Candidates")
-        st.dataframe(filtered_df)
-
     
-
+    # Filter by Company
+    if companies:
+        filtered_df = filtered_df[filtered_df['company_names'].apply(lambda x: any(company in companies for company in x))]
+        st.write("### Filtered Candidates (By Company)")
+        st.dataframe(filtered_df)
+    
+    # Filter by Skills (if applicable)
+    if skills:
+        filtered_df = filtered_df[filtered_df['technical_skills'].apply(lambda x: any(skill in skills for skill in x))]
+        st.write("### Filtered Candidates (By Skills)")
+        st.dataframe(filtered_df)
+    
     ######################### Resume Statistics Table ######################
     # Experience and university/company counts
     flattened_company_names = [company for sublist in filtered_df['company_names'] for company in sublist]
