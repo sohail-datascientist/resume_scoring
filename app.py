@@ -179,7 +179,6 @@ if jd_file and resume_files:
     # selected_skills = st.multiselect('Filter by Skills', all_skills)
 
     filtered_results = results_df.copy()
-
     if selected_universities:
         filtered_results = filtered_results[filtered_results['university_name'].isin(selected_universities)]
 
