@@ -19,7 +19,7 @@ tokenizer = BertTokenizer.from_pretrained('bert-base-uncased')
 model = BertModel.from_pretrained('bert-base-uncased').to(device)
 
 # Load spaCy's pre-trained NER model for extracting entities
-nlp = spacy.load("en_core_web_sm")
+#  = spacy.load("en_core_web_sm")
 
 ###################### Start #######################
 # Llama 3.1 Initialization
