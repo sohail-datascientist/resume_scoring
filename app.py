@@ -217,13 +217,14 @@ if jd_file and resume_files:
 
     if universities:
         filtered_df = filtered_df[filtered_df["university_name"].isin(universities)]
-    if companies:
-        filtered_df = filtered_df[filtered_df['company_names'].apply(lambda x: any(company in x for company in companies))]
-    if skills:
-        filtered_df = filtered_df[filtered_df['technical_skills'].apply(lambda x: any(skill in x for skill in skills))]
-
         st.write("### Filtered Candidates")
         st.dataframe(filtered_df)
+    if companies:
+        filtered_df = filtered_df[filtered_df['company_names'].apply(lambda x: any(company in x for company in companies))]
+        st.write("### Filtered Candidates")
+        st.dataframe(filtered_df)
+
+    
 
     ######################### Resume Statistics Table ######################
     # Experience and university/company counts
@@ -246,39 +247,3 @@ if jd_file and resume_files:
 
     st.write("### Resume Statistics")
     st.dataframe(resume_stats)
-    ######################### Pie Chart for Skills ######################
-    # skill_counts = filtered_df['technical_skills'].explode().value_counts()
-    
-    # # Plotting the pie chart using Matplotlib
-    # fig, ax = plt.subplots(figsize=(8, 8))  # Adjust figure size for better clarity
-    # ax.pie(skill_counts, labels=skill_counts.index, autopct='%1.1f%%', startangle=90, colors=sns.color_palette("Set3", len(skill_counts)))
-    # ax.axis('equal')  # Equal aspect ratio ensures the pie chart is circular.
-    # ax.set_title('Skills Distribution', fontsize=16)
-    # st.write("### Skills Distribution")
-    # st.pyplot(fig)
-    
-    # ######################### Bar Chart for Universities ######################
-    # university_counts = filtered_df['university_name'].value_counts()
-    
-    # # Plotting the bar chart using Seaborn
-    # fig, ax = plt.subplots(figsize=(10, 6))  # Adjust figure size for better clarity
-    # sns.barplot(x=university_counts.index, y=university_counts.values, ax=ax, palette='Reds')
-    # ax.set_xlabel('University Name', fontsize=12)
-    # ax.set_ylabel('Number of Candidates', fontsize=12)
-    # ax.set_title('University Distribution', fontsize=16)
-    # plt.xticks(rotation=45, ha='right')  # Rotate x-axis labels for better readability
-    # st.write("### University Distribution")
-    # st.pyplot(fig)
-    
-    # ######################### Bar Chart for Companies ######################
-    # company_counts = pd.Series(flattened_company_names).value_counts()
-    
-    # # Plotting the bar chart using Seaborn
-    # fig, ax = plt.subplots(figsize=(10, 6))  # Adjust figure size for better clarity
-    # sns.barplot(x=company_counts.index, y=company_counts.values, ax=ax, palette='Blues')
-    # ax.set_xlabel('Company Name', fontsize=12)
-    # ax.set_ylabel('Number of Candidates', fontsize=12)
-    # ax.set_title('Company Distribution', fontsize=16)
-    # plt.xticks(rotation=45, ha='right')  # Rotate x-axis labels for better readability
-    # st.write("### Company Distribution")
-    # st.pyplot(fig)
