@@ -249,55 +249,36 @@ if jd_file and resume_files:
     ######################### Pie Chart for Skills ######################
     skill_counts = filtered_df['technical_skills'].explode().value_counts()
     
-    # Plot using Plotly
-    fig = px.pie(
-        names=skill_counts.index, 
-        values=skill_counts.values, 
-        title="Skills Distribution",
-        color=skill_counts.index, 
-        color_discrete_sequence=px.colors.qualitative.Set3
-    )
-    fig.update_traces(textinfo='percent+label')
-    fig.update_layout(margin=dict(t=50, b=50, l=50, r=50))  # Adjust margins for better spacing
+    # Plotting the pie chart using Matplotlib
+    fig, ax = plt.subplots(figsize=(8, 8))  # Adjust figure size for better clarity
+    ax.pie(skill_counts, labels=skill_counts.index, autopct='%1.1f%%', startangle=90, colors=sns.color_palette("Set3", len(skill_counts)))
+    ax.axis('equal')  # Equal aspect ratio ensures the pie chart is circular.
+    ax.set_title('Skills Distribution', fontsize=16)
     st.write("### Skills Distribution")
-    st.plotly_chart(fig)
+    st.pyplot(fig)
     
     ######################### Bar Chart for Universities ######################
     university_counts = filtered_df['university_name'].value_counts()
     
-    # Plot using Plotly
-    fig = px.bar(
-        university_counts, 
-        x=university_counts.index, 
-        y=university_counts.values, 
-        title="University Distribution", 
-        labels={'x': 'University Name', 'y': 'Number of Candidates'},
-        color=university_counts.index,
-        color_discrete_sequence=px.colors.qualitative.Set1
-    )
-    fig.update_layout(
-        xaxis_tickangle=-45,  # Rotate x-axis labels for better readability
-        margin=dict(t=50, b=100, l=50, r=50)  # Adjust margins for better spacing
-    )
+    # Plotting the bar chart using Seaborn
+    fig, ax = plt.subplots(figsize=(10, 6))  # Adjust figure size for better clarity
+    sns.barplot(x=university_counts.index, y=university_counts.values, ax=ax, palette='Reds')
+    ax.set_xlabel('University Name', fontsize=12)
+    ax.set_ylabel('Number of Candidates', fontsize=12)
+    ax.set_title('University Distribution', fontsize=16)
+    plt.xticks(rotation=45, ha='right')  # Rotate x-axis labels for better readability
     st.write("### University Distribution")
-    st.plotly_chart(fig)
+    st.pyplot(fig)
     
     ######################### Bar Chart for Companies ######################
     company_counts = pd.Series(flattened_company_names).value_counts()
     
-    # Plot using Plotly
-    fig = px.bar(
-        company_counts, 
-        x=company_counts.index, 
-        y=company_counts.values, 
-        title="Company Distribution", 
-        labels={'x': 'Company Name', 'y': 'Number of Candidates'},
-        color=company_counts.index,
-        color_discrete_sequence=px.colors.qualitative.Pastel
-    )
-    fig.update_layout(
-        xaxis_tickangle=-45,  # Rotate x-axis labels for better readability
-        margin=dict(t=50, b=100, l=50, r=50)  # Adjust margins for better spacing
-    )
+    # Plotting the bar chart using Seaborn
+    fig, ax = plt.subplots(figsize=(10, 6))  # Adjust figure size for better clarity
+    sns.barplot(x=company_counts.index, y=company_counts.values, ax=ax, palette='Blues')
+    ax.set_xlabel('Company Name', fontsize=12)
+    ax.set_ylabel('Number of Candidates', fontsize=12)
+    ax.set_title('Company Distribution', fontsize=16)
+    plt.xticks(rotation=45, ha='right')  # Rotate x-axis labels for better readability
     st.write("### Company Distribution")
-    st.plotly_chart(fig)
+    st.pyplot(fig)
