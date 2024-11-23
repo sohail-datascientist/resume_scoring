@@ -203,13 +203,32 @@ if jd_file and resume_files:
     st.write("### Candidates")
     st.dataframe(results_df)
 
+        ######################### Filter Section ######################
+    st.write("### Apply Filters")
+        # Initialize session state for filters and results if not already done
+    if "filtered_df" not in st.session_state:
+        st.session_state.filtered_df = results_df  # Initialize with unfiltered data
+    
+    if "universities" not in st.session_state:
+        st.session_state.universities = []
+    if "companies" not in st.session_state:
+        st.session_state.companies = []
+    if "skills" not in st.session_state:
+        st.session_state.skills = []
+    
     ######################### Filter Section ######################
+    # Multi-select filters for university, company, and skills
     st.write("### Apply Filters")
     
     # Filters for universities and companies
-    universities = st.multiselect("Select Universities", options=results_df["university_name"].unique())
-    companies = st.multiselect("Select Companies", options=results_df["company_names"].explode().unique())
-    skills = st.multiselect("Select Skills", options=results_df['technical_skills'].explode().unique())
+    universities = st.multiselect("Select Universities", options=results_df["university_name"].unique(), default=st.session_state.universities)
+    companies = st.multiselect("Select Companies", options=results_df["company_names"].explode().unique(), default=st.session_state.companies)
+    skills = st.multiselect("Select Skills", options=results_df['technical_skills'].explode().unique(), default=st.session_state.skills)
+    
+    # Update session state with current filter selections
+    st.session_state.universities = universities
+    st.session_state.companies = companies
+    st.session_state.skills = skills
     
     # Filter results based on selections
     filtered_df = results_df.copy()
@@ -217,39 +236,40 @@ if jd_file and resume_files:
     # Filter by University
     if universities:
         filtered_df = filtered_df[filtered_df["university_name"].isin(universities)]
-        st.write("### Filtered Candidates (By University)")
-        st.dataframe(filtered_df)
     
     # Filter by Company
     if companies:
         filtered_df = filtered_df[filtered_df['company_names'].apply(lambda x: any(company in companies for company in x))]
-        st.write("### Filtered Candidates (By Company)")
-        st.dataframe(filtered_df)
     
-    # Filter by Skills (if applicable)
+    # Filter by Skills
     if skills:
         filtered_df = filtered_df[filtered_df['technical_skills'].apply(lambda x: any(skill in skills for skill in x))]
-        st.write("### Filtered Candidates (By Skills)")
-        st.dataframe(filtered_df)
+    
+    # Save filtered DataFrame to session state
+    st.session_state.filtered_df = filtered_df
+    
+    # Display the filtered results
+    st.write("### Filtered Candidates")
+    st.dataframe(st.session_state.filtered_df)
     
     ######################### Resume Statistics Table ######################
     # Experience and university/company counts
     flattened_company_names = [company for sublist in filtered_df['company_names'] for company in sublist]
     unique_companies = list(set(flattened_company_names))
-
+    
     experience_counts = {
         "Fresh Candidate": 0,
         "Experienced": 0
     }
     for experience in filtered_df['experience']:
         experience_counts[experience] += 1
-
+    
     # Resume Statistics as a Table
     resume_stats = pd.DataFrame({
-        "Total Resumes": [len(results_df)],
+        "Total Resumes": [len(filtered_df)],
         "Fresh Candidates": [experience_counts['Fresh Candidate']],
         "Experienced Candidates": [experience_counts['Experienced']],
     })
-
+    
     st.write("### Resume Statistics")
     st.dataframe(resume_stats)
