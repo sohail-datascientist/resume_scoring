@@ -9,6 +9,8 @@ import json
 import fitz  # PyMuPDF for PDF processing
 import matplotlib.pyplot as plt
 import seaborn as sns
+import plotly.express as px
+import plotly.graph_objects as go
 
 # Set device for BERT model
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
@@ -245,33 +247,30 @@ if jd_file and resume_files:
     st.write("### Resume Statistics")
     st.dataframe(resume_stats)
 
-    ######################### Pie Chart for Skills ######################
+        # Pie Chart for Skills using Plotly
     skill_counts = filtered_df['technical_skills'].explode().value_counts()
-    fig, ax = plt.subplots()
-    ax.pie(skill_counts, labels=skill_counts.index, autopct='%1.1f%%', startangle=90)
-    ax.axis('equal')
-    st.write("### Skills Distribution")
-    st.pyplot(fig)
-
-    ######################### Bar Chart for Universities ######################
+    fig = go.Figure(data=[go.Pie(labels=skill_counts.index, values=skill_counts.values, hole=.3)])
+    fig.update_layout(title_text="Skills Distribution")
+    st.plotly_chart(fig)
+    
+    # Bar Chart for Universities using Plotly
     university_counts = filtered_df['university_name'].value_counts()
-    fig, ax = plt.subplots()
-    sns.barplot(x=university_counts.index, y=university_counts.values, ax=ax, color='red')
-    ax.set_xlabel('University Name')
-    ax.set_ylabel('Number of Candidates')
-    ax.set_title('University Distribution')
-    st.write("### University Distribution")
-    st.pyplot(fig)
-
-    ######################### Bar Chart for Companies ######################
+    fig = px.bar(
+        x=university_counts.index,
+        y=university_counts.values,
+        labels={'x': 'University Name', 'y': 'Number of Candidates'},
+        title='University Distribution'
+    )
+    fig.update_xaxes(tickangle=45)
+    st.plotly_chart(fig)
+    
+    # Bar Chart for Companies using Plotly
     company_counts = pd.Series(flattened_company_names).value_counts()
-    fig, ax = plt.subplots()
-    sns.barplot(x=company_counts.index, y=company_counts.values, ax=ax, color='blue')
-    ax.set_xlabel('Company Name')
-    ax.set_ylabel('Number of Candidates')
-    ax.set_title('Company Distribution')
-    st.write("### Company Distribution")
-    st.pyplot(fig)
-
-    ######################### Filtered Table ######################
- 
+    fig = px.bar(
+        x=company_counts.index,
+        y=company_counts.values,
+        labels={'x': 'Company Name', 'y': 'Number of Candidates'},
+        title='Company Distribution'
+    )
+    fig.update_xaxes(tickangle=45)
+    st.plotly_chart(fig)
