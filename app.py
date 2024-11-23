@@ -6,7 +6,10 @@ from transformers import BertTokenizer, BertModel
 import torch
 from groq import Groq
 import json
-import fitz  # PyMuPDF for PDF extraction
+import spacy
+import fitz  # PyMuPDF for PDF processing
+import matplotlib.pyplot as plt
+import seaborn as sns
 
 # Set device for BERT model
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
@@ -15,23 +18,28 @@ device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 tokenizer = BertTokenizer.from_pretrained('bert-base-uncased')
 model = BertModel.from_pretrained('bert-base-uncased').to(device)
 
+# Load spaCy's pre-trained NER model for extracting entities
+nlp = spacy.load("en_core_web_sm")
+
 ###################### Start #######################
 # Llama 3.1 Initialization
 client = Groq(api_key="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")
 
 # Adjusted prompt for JSON output
 instruction = """
-You are an AI bot designed to act as a professional for parsing resumes. 
-You are given a resume, and your job is to extract the following information in JSON format only:
-    1. full_name
-    2. university_name
-    3. national/international_university "if national return Yes else No"
-    4. email_id
-    5. employment_details (with fields: company, position, duration, location)
-    6. technical_skills
-    7. soft_skills
-    8. location "Please provide the location of the candidate's work experience or location mentioned in the resume"
-Give the extracted information in JSON format only, without any additional commentary.
+You are an AI bot designed to parse resumes and extract the following details in JSON:
+1. full_name
+2. university_name
+3. national_university/international_university "if national return Yes else No"
+4. email_id
+5. employment_details (with fields: company, position, duration, location, and tags indicating teaching, industry, or internship based on role)
+6. technical_skills
+7. soft_skills
+8. location
+
+Classify university as either "National University" or "International University".
+Only return the most relevant job roles without categorizing experience.
+Return all information in JSON format, including the roles tagged with the correct university type and job details.
 """
 ###################### End #######################
 
@@ -54,142 +62,221 @@ def decode_file(file):
     except UnicodeDecodeError:
         return file.getvalue().decode("ISO-8859-1")
 
-# Function to extract text from PDF
+# Function to extract text from PDF files
 def extract_text_from_pdf(pdf_file):
-    # Open the file directly as a BytesIO object
-    pdf_bytes = pdf_file.read()  # Read the BytesIO content
-    doc = fitz.open(stream=pdf_bytes, filetype="pdf")  # Use fitz.open() with stream argument
+    pdf_bytes = pdf_file.read()
+    doc = fitz.open(stream=pdf_bytes, filetype="pdf")
     text = ""
     for page in doc:
-        text += page.get_text("text")  # Extract text from each page
+        text += page.get_text("text")
     return text
 
-# Streamlit App Interface
-st.title("Automated Resume Screening")
+# Custom CSS Styling for the Streamlit App
+st.markdown("""
+    <style>
+    body {
+        font-family: 'Arial', sans-serif;
+        background-color: white;
+    }
+    .sidebar .sidebar-content {
+        background-color: #2c3e50;
+        color: white;
+    }
+    .streamlit-expanderHeader {
+        font-size: 18px;
+        font-weight: bold;
+        color: #3498db;
+    }
+    .stButton>button {
+        background-color: #3498db;
+        color: white;
+        
+        padding: 10px 20px;
+        font-size: 16px;
+        font-weight: bold;
+        transition: background-color 0.3s ease;
+    }
+    .stButton>button:hover {
+        background-color: #2980b9;
+    }
+    .stDataFrame {
+        padding: 20px;
+        margin-top: 20px;
+        box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
+    }
+    .stSidebar {
+        background-color: #2c3e50;
+        color: white;
+    }
+    .stMarkdown {
+        margin-top: 20px;
+    }
+    table, th, td {
+        border: 1px solid #ccc;
+    }
+    th, td {
+        padding: 8px 12px;
+    }
+    .stAlert {
+        background-color: #2ecc71;
+        color: white;
+        padding: 10px;
+        font-weight: bold;
+    }
+    </style>
+""", unsafe_allow_html=True)
 
-# Upload Job Description
-jd_file = st.file_uploader("Upload Job Description (.txt or .pdf)", type=["txt", "pdf"])
+# Set up Streamlit app UI
+st.title("Automated Resume Screening Dashboard")
 
-# Upload Resumes (multiple files allowed)
-resume_files = st.file_uploader("Upload Resumes (.txt or .pdf)", type=["txt", "pdf"], accept_multiple_files=True)
+# Sidebar - File Upload
+with st.sidebar:
+    st.header("📤 File Uploads")
+    jd_file = st.file_uploader("Upload Job Description (.txt or .pdf)", type=["txt", "pdf"])
+    resume_files = st.file_uploader("Upload Resumes (.txt or .pdf)", type=["txt", "pdf"], accept_multiple_files=True)
 
-# Initialize variables for filtered data
-filtered_results = pd.DataFrame()
+########################## Main Body ###########################
 
-# Process files and calculate similarity
+# Only process if JD and resumes are uploaded
 if jd_file and resume_files:
-    # Handle Job Description file upload (TXT or PDF)
-    if jd_file.type == "application/pdf":
-        jd_content = extract_text_from_pdf(jd_file)
-    else:
-        jd_content = decode_file(jd_file)
-    
-    jd_content = preprocess_text(jd_content)
-    jd_embedding = get_bert_embeddings(jd_content)
+    # Initialize results_df only after resumes are processed
+    results_df = pd.DataFrame(columns=["Resume", "Similarity Score", "full_name", "university_name", "company_names", "technical_skills", "soft_skills", "experience"])
 
-    progress_bar = st.progress(0)
-    total_files = len(resume_files)
-    results = []
-
-    for idx, resume_file in enumerate(resume_files):
-        progress_bar.progress((idx + 1) / total_files)
-        
-        # Handle Resume file upload (TXT or PDF)
-        if resume_file.type == "application/pdf":
-            resume_content = extract_text_from_pdf(resume_file)
+    # Process files and calculate similarity only if resumes are uploaded
+    if jd_file and resume_files:
+        if jd_file.type == "application/pdf":
+            jd_content = extract_text_from_pdf(jd_file)
         else:
-            resume_content = decode_file(resume_file)
-        
-        resume_content = preprocess_text(resume_content)
-        resume_embedding = get_bert_embeddings(resume_content)
+            jd_content = decode_file(jd_file)
+        jd_content = preprocess_text(jd_content)
+        jd_embedding = get_bert_embeddings(jd_content)
 
-        similarity_score = cosine_similarity(jd_embedding, resume_embedding)[0][0]
+        results = []
+        for resume_file in resume_files:
+            if resume_file.type == "application/pdf":
+                resume_content = extract_text_from_pdf(resume_file)
+            else:
+                resume_content = decode_file(resume_file)
+            resume_content = preprocess_text(resume_content)
+            resume_embedding = get_bert_embeddings(resume_content)
+            similarity_score = cosine_similarity(jd_embedding, resume_embedding)[0][0]
 
-        completion = client.chat.completions.create(
-            model="llama3-groq-70b-8192-tool-use-preview",
-            messages=[{"role": "user", "content": instruction + resume_content}],
-            temperature=0.5,
-            max_tokens=1024,
-            top_p=0.65,
-            stream=False,
-        )
+            # Request data extraction from Groq
+            completion = client.chat.completions.create(
+                model="llama3-groq-70b-8192-tool-use-preview",
+                messages=[{"role": "user", "content": instruction + resume_content}],
+                temperature=0.5, max_tokens=1024, top_p=0.65
+            )
 
-        result_json = completion.choices[0].message.content
+            try:
+                result_json = completion.choices[0].message.content
+                result = json.loads(result_json)
+            except json.JSONDecodeError:
+                result = {}
 
-        try:
-            result = json.loads(result_json)
-        except json.JSONDecodeError:
-            result = {}
+            employment_details = result.get("employment_details", [])
+            
+            # Store employment details and classify
+            if not employment_details:
+                experience = "Fresh Candidate"
+                company_names = ["N/A"]
+                skills = result.get("technical_skills", [])
+            else:
+                experience = "Experienced"
+                company_names = [detail.get('company', 'N/A') for detail in employment_details]
+                skills = result.get("technical_skills", [])
 
-        employment_details = result.get("employment_details", [])
-        if not employment_details:
-            employment_details = [{'company': 'Fresh Candidate', 'position': 'Fresh Candidate', 'duration': 'N/A', 'location': 'N/A'}]
+            # Append data to results
+            results.append({
+                'Resume': resume_file.name,
+                'Similarity Score': similarity_score,
+                'full_name': result.get("full_name"),
+                'university_name': result.get("university_name"),
+                'company_names': company_names,
+                'technical_skills': skills,
+                'soft_skills': " - ".join(result.get("soft_skills", [])),
+                'experience': experience
+            })
 
-        company_names = []
-        locations = []
-        designations = []
+        results_df = pd.DataFrame(results)
 
-        for detail in employment_details:
-            company_name = detail.get('company', 'N/A')
-            designation = detail.get('position', 'N/A')
-            location = detail.get('location', 'N/A')
-            if location == 'N/A':
-                location = result.get('location', 'N/A')  # Directly get location from the result
-
-            company_names.append(company_name)
-            locations.append(location)
-            designations.append(designation)
-
-        company_names_str = " - ".join(company_names)
-        location_str = locations[0] if locations else 'N/A'
-        designation_str = ", ".join(designations)
-
-        technical_skills = result.get("technical_skills", [])
-        soft_skills = result.get("soft_skills", [])
-        technical_skills_str = " - ".join(technical_skills)
-        soft_skills_str = " - ".join(soft_skills)
-
-        results.append({
-            'Job Description': jd_file.name,
-            'Resume': resume_file.name,
-            'Similarity Score': similarity_score,
-            'full_name': result.get("full_name"),
-            'university_name': result.get("university_name"),
-            'national/international_university': result.get("national/international_university"),
-            'email_id': result.get("email_id"),
-            'technical_skills': technical_skills_str,
-            'soft_skills': soft_skills_str,
-            'company_names': company_names_str,
-            'location': location_str,
-            'designation': designation_str,
-        })
-
-    results_df = pd.DataFrame(results).sort_values(by='Similarity Score', ascending=False)
-
-    st.write("### Original Results")
+    # Sort results by Similarity Score in descending order
+    results_df = results_df.sort_values(by="Similarity Score", ascending=False)
+    # Display filtered table
+    st.write("### Candidates")
     st.dataframe(results_df)
 
-    university_names = results_df['university_name'].dropna().unique()
-    selected_universities = st.multiselect('Filter by Universities', university_names)
+    ######################### Filter Section ######################
+    # Multi-select filters for university, company, and skills
+    st.write("### Apply Filters")
 
-    all_company_names = results_df['company_names'].str.split(' - ').explode().dropna().unique()
-    selected_companies = st.multiselect('Filter by Companies', all_company_names)
+    # Filters for universities and companies
+    universities = st.multiselect("Select Universities", options=results_df["university_name"].unique())
+    companies = st.multiselect("Select Companies", options=results_df["company_names"].explode().unique())
+    skills = st.multiselect("Select Skills", options=results_df['technical_skills'].explode().unique())
 
-    # all_skills = results_df['technical_skills'].str.split(' - ').explode().dropna().unique()
-    # selected_skills = st.multiselect('Filter by Skills', all_skills)
+    # Filter results based on selections
+    filtered_df = results_df.copy()
 
-    filtered_results = results_df.copy()
-    if selected_universities:
-        filtered_results = filtered_results[filtered_results['university_name'].isin(selected_universities)]
+    if universities:
+        filtered_df = filtered_df[filtered_df["university_name"].isin(universities)]
+    if companies:
+        filtered_df = filtered_df[filtered_df['company_names'].apply(lambda x: any(company in x for company in companies))]
+    if skills:
+        filtered_df = filtered_df[filtered_df['technical_skills'].apply(lambda x: any(skill in x for skill in skills))]
 
-    if selected_companies:
-        filtered_results = filtered_results[filtered_results['company_names'].isin(selected_companies)]
+    st.write("### Filtered Candidates")
+    st.dataframe(filtered_df)
 
-    # if selected_skills:
-    #     filtered_results = filtered_results[filtered_results['technical_skills'].str.contains('|'.join(selected_skills), na=False)]
+    ######################### Resume Statistics Table ######################
+    # Experience and university/company counts
+    flattened_company_names = [company for sublist in filtered_df['company_names'] for company in sublist]
+    unique_companies = list(set(flattened_company_names))
 
-    if not filtered_results.empty:
-        st.write(f"### Filtered Results ({len(filtered_results)} candidates)")
-        st.dataframe(filtered_results)
-    else:
-        st.write("No candidates match the selected criteria.")
+    experience_counts = {
+        "Fresh Candidate": 0,
+        "Experienced": 0
+    }
+    for experience in filtered_df['experience']:
+        experience_counts[experience] += 1
+
+    # Resume Statistics as a Table
+    resume_stats = pd.DataFrame({
+        "Total Resumes": [len(results_df)],
+        "Fresh Candidates": [experience_counts['Fresh Candidate']],
+        "Experienced Candidates": [experience_counts['Experienced']],
+    })
+
+    st.write("### Resume Statistics")
+    st.dataframe(resume_stats)
+
+    ######################### Pie Chart for Skills ######################
+    skill_counts = filtered_df['technical_skills'].explode().value_counts()
+    fig, ax = plt.subplots()
+    ax.pie(skill_counts, labels=skill_counts.index, autopct='%1.1f%%', startangle=90)
+    ax.axis('equal')
+    st.write("### Skills Distribution")
+    st.pyplot(fig)
+
+    ######################### Bar Chart for Universities ######################
+    university_counts = filtered_df['university_name'].value_counts()
+    fig, ax = plt.subplots()
+    sns.barplot(x=university_counts.index, y=university_counts.values, ax=ax, color='red')
+    ax.set_xlabel('University Name')
+    ax.set_ylabel('Number of Candidates')
+    ax.set_title('University Distribution')
+    st.write("### University Distribution")
+    st.pyplot(fig)
+
+    ######################### Bar Chart for Companies ######################
+    company_counts = pd.Series(flattened_company_names).value_counts()
+    fig, ax = plt.subplots()
+    sns.barplot(x=company_counts.index, y=company_counts.values, ax=ax, color='blue')
+    ax.set_xlabel('Company Name')
+    ax.set_ylabel('Number of Candidates')
+    ax.set_title('Company Distribution')
+    st.write("### Company Distribution")
+    st.pyplot(fig)
+
+    ######################### Filtered Table ######################
+ 
