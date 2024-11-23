@@ -246,31 +246,58 @@ if jd_file and resume_files:
 
     st.write("### Resume Statistics")
     st.dataframe(resume_stats)
-
-        # Pie Chart for Skills using Plotly
+    ######################### Pie Chart for Skills ######################
     skill_counts = filtered_df['technical_skills'].explode().value_counts()
-    fig = go.Figure(data=[go.Pie(labels=skill_counts.index, values=skill_counts.values, hole=.3)])
-    fig.update_layout(title_text="Skills Distribution")
+    
+    # Plot using Plotly
+    fig = px.pie(
+        names=skill_counts.index, 
+        values=skill_counts.values, 
+        title="Skills Distribution",
+        color=skill_counts.index, 
+        color_discrete_sequence=px.colors.qualitative.Set3
+    )
+    fig.update_traces(textinfo='percent+label')
+    fig.update_layout(margin=dict(t=50, b=50, l=50, r=50))  # Adjust margins for better spacing
+    st.write("### Skills Distribution")
     st.plotly_chart(fig)
     
-    # Bar Chart for Universities using Plotly
+    ######################### Bar Chart for Universities ######################
     university_counts = filtered_df['university_name'].value_counts()
+    
+    # Plot using Plotly
     fig = px.bar(
-        x=university_counts.index,
-        y=university_counts.values,
+        university_counts, 
+        x=university_counts.index, 
+        y=university_counts.values, 
+        title="University Distribution", 
         labels={'x': 'University Name', 'y': 'Number of Candidates'},
-        title='University Distribution'
+        color=university_counts.index,
+        color_discrete_sequence=px.colors.qualitative.Set1
     )
-    fig.update_xaxes(tickangle=45)
+    fig.update_layout(
+        xaxis_tickangle=-45,  # Rotate x-axis labels for better readability
+        margin=dict(t=50, b=100, l=50, r=50)  # Adjust margins for better spacing
+    )
+    st.write("### University Distribution")
     st.plotly_chart(fig)
     
-    # Bar Chart for Companies using Plotly
+    ######################### Bar Chart for Companies ######################
     company_counts = pd.Series(flattened_company_names).value_counts()
+    
+    # Plot using Plotly
     fig = px.bar(
-        x=company_counts.index,
-        y=company_counts.values,
+        company_counts, 
+        x=company_counts.index, 
+        y=company_counts.values, 
+        title="Company Distribution", 
         labels={'x': 'Company Name', 'y': 'Number of Candidates'},
-        title='Company Distribution'
+        color=company_counts.index,
+        color_discrete_sequence=px.colors.qualitative.Pastel
     )
-    fig.update_xaxes(tickangle=45)
+    fig.update_layout(
+        xaxis_tickangle=-45,  # Rotate x-axis labels for better readability
+        margin=dict(t=50, b=100, l=50, r=50)  # Adjust margins for better spacing
+    )
+    st.write("### Company Distribution")
     st.plotly_chart(fig)
