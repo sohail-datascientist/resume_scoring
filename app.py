@@ -170,10 +170,13 @@ if jd_file and resume_files:
 
 
             try:
-                result_json = completion.choices[0].message.content
-                result = json.loads(result_json)
-            except json.JSONDecodeError:
-                result = {}
+            result_json = completion.choices[0].message.content
+            result = json.loads(result_json)
+            
+            except (json.JSONDecodeError, IndexError, KeyError) as e:
+            st.error(f"Error parsing API response: {e}")
+            result = {}
+
 
             employment_details = result.get("employment_details", [])
             
