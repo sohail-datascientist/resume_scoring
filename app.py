@@ -164,10 +164,10 @@ if jd_file and resume_files:
 
             # Request data extraction from Groq
             completion = client.chat.completions.create(
-                model="llama3-groq-70b-8192-tool-use-preview",
-                messages=[{"role": "user", "content": instruction + resume_content}],
-                temperature=0.5, max_tokens=1024, top_p=0.65
-            )
+            model="llama3-groq-70b-8192-tool-use-preview",
+            messages=[{"role": "user", "content": instruction + resume_content}],
+            temperature=0.3, max_tokens=2048, top_p=1.0)
+
 
             try:
                 result_json = completion.choices[0].message.content
