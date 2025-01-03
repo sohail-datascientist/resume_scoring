@@ -86,7 +86,6 @@ st.markdown("""
     .stButton>button {
         background-color: #3498db;
         color: white;
-        
         padding: 10px 20px;
         font-size: 16px;
         font-weight: bold;
@@ -119,8 +118,14 @@ st.markdown("""
         padding: 10px;
         font-weight: bold;
     }
+    /* Custom CSS for file uploader label */
+    label {
+        color: white !important;
+        font-size: 16px;
+    }
     </style>
 """, unsafe_allow_html=True)
+
 
 # Set up Streamlit app UI
 st.title("Automated Resume Screening Dashboard")
