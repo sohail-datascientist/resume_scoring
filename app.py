@@ -86,6 +86,7 @@ st.markdown("""
     .stButton>button {
         background-color: #3498db;
         color: white;
+        
         padding: 10px 20px;
         font-size: 16px;
         font-weight: bold;
@@ -118,14 +119,8 @@ st.markdown("""
         padding: 10px;
         font-weight: bold;
     }
-    /* Custom CSS for file uploader label */
-    label {
-        color: white !important;
-        font-size: 16px;
-    }
     </style>
 """, unsafe_allow_html=True)
-
 
 # Set up Streamlit app UI
 st.title("Automated Resume Screening Dashboard")
@@ -164,19 +159,16 @@ if jd_file and resume_files:
 
             # Request data extraction from Groq
             completion = client.chat.completions.create(
-            model="llama3-groq-70b-8192-tool-use-preview",
-            messages=[{"role": "user", "content": instruction + resume_content}],
-            temperature=0.3, max_tokens=2048, top_p=1.0)
-
+                model="llama3-groq-70b-8192-tool-use-preview",
+                messages=[{"role": "user", "content": instruction + resume_content}],
+                temperature=0.5, max_tokens=1024, top_p=0.65
+            )
 
             try:
                 result_json = completion.choices[0].message.content
                 result = json.loads(result_json)
-            
-            except (json.JSONDecodeError, IndexError, KeyError) as e: 
-                st.error(f"Error parsing API response: {e}")
+            except json.JSONDecodeError:
                 result = {}
-
 
             employment_details = result.get("employment_details", [])
             
