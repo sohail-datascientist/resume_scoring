@@ -186,7 +186,7 @@ if jd_file and resume_files:
                 "soft_skills": result.get("soft_skills", []),
                 "Total experience in Years": result.get("total_professional_experience", "N/A"),
                 "location": result.get("location", "N/A"),
-                "summary": summary_instruction
+                "summary": summary
             }
             
             #st.success(f"Processed {resume_file.name} using Client {used_client}")
