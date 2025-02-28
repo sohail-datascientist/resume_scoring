@@ -85,7 +85,7 @@ with st.sidebar:
 ###################### Main Processing #######################
 if jd_file and resume_files:
     results_df = pd.DataFrame(columns=["Resume", "Similarity Score", "full_name", "university_name",
-                                      "national/international  uni.","email_id","github_link", "company_names",
+                                      "national/international uni.", "email_id", "github_link", "company_names",
                                       "technical_skills", "soft_skills", "Total experience in Years", "location"])
 
     # Process JD first
@@ -146,7 +146,7 @@ if jd_file and resume_files:
                 "Similarity Score": similarity_score,
                 "full_name": result.get("full_name", "N/A"),
                 "university_name": result.get("university_name", "N/A"),
-                "national/international  uni.": result.get("national_university/international_university", "N/A"),
+                "national/international uni.": result.get("national_university/international_university", "N/A"),
                 "email_id": result.get("email_id", "N/A"),
                 "github_link": result.get("github_link", "N/A"),
                 "company_names": company_names,
@@ -162,6 +162,11 @@ if jd_file and resume_files:
             st.error(f"Failed to parse response for: {resume_file.name}")
         except Exception as e:
             st.error(f"Error processing {resume_file.name}: {str(e)}")
+
+    # Convert lists in DataFrame to strings for compatibility with PyArrow
+    results_df["company_names"] = results_df["company_names"].apply(lambda x: ', '.join(x) if isinstance(x, list) else x)
+    results_df["technical_skills"] = results_df["technical_skills"].apply(lambda x: ', '.join(x) if isinstance(x, list) else x)
+    results_df["soft_skills"] = results_df["soft_skills"].apply(lambda x: ', '.join(x) if isinstance(x, list) else x)
 
     # Sort and display results
     results_df = results_df.sort_values(by="Similarity Score", ascending=False)
