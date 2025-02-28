@@ -168,6 +168,9 @@ if jd_file and resume_files:
     results_df["technical_skills"] = results_df["technical_skills"].apply(lambda x: ', '.join(x) if isinstance(x, list) else x)
     results_df["soft_skills"] = results_df["soft_skills"].apply(lambda x: ', '.join(x) if isinstance(x, list) else x)
 
+    # Convert 'Total experience in Years' to numeric, handling non-numeric values
+    results_df["Total experience in Years"] = pd.to_numeric(results_df["Total experience in Years"], errors='coerce').fillna(0)
+
     # Sort and display results
     results_df = results_df.sort_values(by="Similarity Score", ascending=False)
     st.write("### Candidates Ranking")
@@ -190,7 +193,7 @@ if jd_file and resume_files:
     st.pyplot(fig2)
 
     # Skill Word Cloud
-    all_skills = [skill for sublist in results_df['technical_skills'] for skill in sublist]
+    all_skills = [skill for sublist in results_df['technical_skills'].str.split(', ') for skill in sublist]
     if all_skills:
         from wordcloud import WordCloud
         wordcloud = WordCloud(width=800, height=400, background_color='white').generate(' '.join(all_skills))
