@@ -189,7 +189,7 @@ if jd_file and resume_files:
                 "summary": summary
             }
             
-            #st.success(f"Processed {resume_file.name} using Client {used_client}")
+            st.success(f"Processed {resume_file.name} using Client {used_client}")
 
         except json.JSONDecodeError:
             st.error(f"Failed to parse response for: {resume_file.name}")
@@ -232,9 +232,13 @@ if jd_file and resume_files:
     # Create a subplot with 1 row and 3 columns
     fig = make_subplots(rows=1, cols=3, subplot_titles=("University Distribution", "Experience Distribution", "Skill Word Cloud"))
 
-    fig.add_trace(fig1.data[0], row=1, col=1)
-    fig.add_trace(fig2.data[0], row=1, col=2)
-    fig.add_trace(fig3.data[0], row=1, col=3)
+    # Add traces to the subplots
+    for trace in fig1['data']:
+        fig.add_trace(trace, row=1, col=1)
+    for trace in fig2['data']:
+        fig.add_trace(trace, row=1, col=2)
+    for trace in fig3['data']:
+        fig.add_trace(trace, row=1, col=3)
 
     # Update layout for better appearance
     fig.update_layout(showlegend=False, title_text="Candidate Analytics", height=600)
