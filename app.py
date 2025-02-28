@@ -131,14 +131,14 @@ if jd_file and resume_files:
                 break  # Successful call
             except Exception as e:
                 if "rate limit" in str(e).lower() or "quota" in str(e).lower():
-                    #st.warning(f"Client {i+1} limit exceeded. Trying next...")
+                    st.warning(f"Client {i+1} limit exceeded. Trying next...")
                     continue
                 else:
-                   # st.error(f"Error with Client {i+1}: {str(e)}")
+                    st.error(f"Error with Client {i+1}: {str(e)}")
                     break
 
         if not completion:
-            #st.error(f"Skipped resume due to API limits: {resume_file.name}")
+            st.error(f"Skipped resume due to API limits: {resume_file.name}")
             continue
 
         # Process API response
@@ -161,14 +161,14 @@ if jd_file and resume_files:
                     break  # Successful call
                 except Exception as e:
                     if "rate limit" in str(e).lower() or "quota" in str(e).lower():
-                        #st.warning(f"Client {i+1} limit exceeded. Trying next...")
+                        st.warning(f"Client {i+1} limit exceeded. Trying next...")
                         continue
                     else:
                         st.error(f"Error with Client {i+1}: {str(e)}")
                         break
 
             if not summary_completion:
-                #st.error(f"Skipped summary generation due to API limits: {resume_file.name}")
+                st.error(f"Skipped summary generation due to API limits: {resume_file.name}")
                 summary = "N/A"
             else:
                 summary = summary_completion.choices[0].message.content.strip()
@@ -189,7 +189,7 @@ if jd_file and resume_files:
                 "summary": summary
             }
             
-            #st.success(f"Processed {resume_file.name} using Client {used_client}")
+            st.success(f"Processed {resume_file.name} using Client {used_client}")
 
         except json.JSONDecodeError:
             st.error(f"Failed to parse response for: {resume_file.name}")
