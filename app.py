@@ -125,7 +125,7 @@ if jd_file and resume_files:
                     temperature=0,
                     max_tokens=1024,
                     top_p=0.65,
-                    response_format={"type": "json_object"}
+                    response_format="json_object"
                 )
                 used_client = i+1
                 break  # Successful call
@@ -156,7 +156,7 @@ if jd_file and resume_files:
                         temperature=0,
                         max_tokens=150,
                         top_p=0.65,
-                        response_format={"type": "json"}
+                        response_format="text"
                     )
                     break  # Successful call
                 except Exception as e:
