@@ -235,10 +235,9 @@ if jd_file and resume_files:
     # Add traces to the subplots
     for trace in fig1['data']:
         fig.add_trace(trace, row=1, col=1)
-    for trace in fig2['data']:
+    for trace in fig2.data:
         fig.add_trace(trace, row=1, col=2)
-    for trace in fig3['data']:
-        fig.add_trace(trace, row=1, col=3)
+    fig.add_trace(go.Image(z=wordcloud.to_array()), row=1, col=3)
 
     # Update layout for better appearance
     fig.update_layout(showlegend=False, title_text="Candidate Analytics", height=600)
