@@ -189,7 +189,7 @@ if jd_file and resume_files:
                 "summary": summary
             }
             
-            st.success(f"Processed {resume_file.name} using Client {used_client}")
+            #st.success(f"Processed {resume_file.name} using Client {used_client}")
 
         except json.JSONDecodeError:
             st.error(f"Failed to parse response for: {resume_file.name}")
