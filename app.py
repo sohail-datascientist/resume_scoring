@@ -7,8 +7,9 @@ import torch
 from groq import Groq
 import json
 import fitz
-import matplotlib.pyplot as plt
-import seaborn as sns
+import plotly.express as px
+from plotly.subplots import make_subplots
+import plotly.graph_objects as go
 
 # Set device for BERT model
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
@@ -41,6 +42,11 @@ You are an AI bot designed to parse resumes and extract the following details in
 
 Return all information in JSON format.
 """
+
+summary_instruction = """
+Based on the job description and the candidate's resume, write a summary of 3 sentences about the relevance and suitability of the candidate for the job.
+"""
+
 ###################### Core Functions #######################
 
 def preprocess_text(text):
@@ -86,7 +92,7 @@ with st.sidebar:
 if jd_file and resume_files:
     results_df = pd.DataFrame(columns=["Resume", "Similarity Score", "full_name", "university_name",
                                       "national/international uni.", "email_id", "github_link", "company_names",
-                                      "technical_skills", "soft_skills", "Total experience in Years", "location"])
+                                      "technical_skills", "soft_skills", "Total experience in Years", "location", "summary"])
 
     # Process JD first
     if jd_file.type == "application/pdf":
@@ -125,14 +131,14 @@ if jd_file and resume_files:
                 break  # Successful call
             except Exception as e:
                 if "rate limit" in str(e).lower() or "quota" in str(e).lower():
-                    st.warning(f"Client {i+1} limit exceeded. Trying next...")
+                    #st.warning(f"Client {i+1} limit exceeded. Trying next...")
                     continue
                 else:
-                    st.error(f"Error with Client {i+1}: {str(e)}")
+                   # st.error(f"Error with Client {i+1}: {str(e)}")
                     break
 
         if not completion:
-            st.error(f"Skipped resume due to API limits: {resume_file.name}")
+            #st.error(f"Skipped resume due to API limits: {resume_file.name}")
             continue
 
         # Process API response
@@ -141,6 +147,32 @@ if jd_file and resume_files:
             employment_details = result.get("employment_details", [])
             company_names = [detail.get('company', 'N/A') for detail in employment_details] if employment_details else ["N/A"]
             
+            summary_completion = None
+            for i, client in enumerate(clients):
+                try:
+                    summary_completion = client.chat.completions.create(
+                        model="llama3-8b-8192",
+                        messages=[{"role": "user", "content": summary_instruction + "\n\nJob Description:\n" + jd_content + "\n\nResume:\n" + processed_content}],
+                        temperature=0,
+                        max_tokens=150,
+                        top_p=0.65,
+                        response_format={"type": "json"}
+                    )
+                    break  # Successful call
+                except Exception as e:
+                    if "rate limit" in str(e).lower() or "quota" in str(e).lower():
+                        #st.warning(f"Client {i+1} limit exceeded. Trying next...")
+                        continue
+                    else:
+                        st.error(f"Error with Client {i+1}: {str(e)}")
+                        break
+
+            if not summary_completion:
+                #st.error(f"Skipped summary generation due to API limits: {resume_file.name}")
+                summary = "N/A"
+            else:
+                summary = summary_completion.choices[0].message.content.strip()
+
             results_df.loc[len(results_df)] = {
                 "Resume": resume_file.name,
                 "Similarity Score": similarity_score,
@@ -153,10 +185,11 @@ if jd_file and resume_files:
                 "technical_skills": result.get("technical_skills", []),
                 "soft_skills": result.get("soft_skills", []),
                 "Total experience in Years": result.get("total_professional_experience", "N/A"),
-                "location": result.get("location", "N/A")
+                "location": result.get("location", "N/A"),
+                "summary": summary
             }
             
-            st.success(f"Processed {resume_file.name} using Client {used_client}")
+            #st.success(f"Processed {resume_file.name} using Client {used_client}")
 
         except json.JSONDecodeError:
             st.error(f"Failed to parse response for: {resume_file.name}")
@@ -181,26 +214,32 @@ if jd_file and resume_files:
     
     # University Distribution
     uni_counts = results_df['university_name'].value_counts()
-    fig1, ax1 = plt.subplots(figsize=(10,6))
-    sns.barplot(x=uni_counts.values, y=uni_counts.index, palette="viridis")
-    plt.title("University Distribution")
-    st.pyplot(fig1)
-
+    fig1 = px.bar(uni_counts, x=uni_counts.values, y=uni_counts.index, orientation='h', title="University Distribution")
+    
     # Experience Distribution
-    fig2, ax2 = plt.subplots(figsize=(8,6))
-    results_df['Total experience in Years'].value_counts().plot.pie(autopct='%1.1f%%')
-    plt.ylabel("")
-    st.pyplot(fig2)
-
+    exp_counts = results_df['Total experience in Years'].value_counts()
+    fig2 = px.pie(values=exp_counts.values, names=exp_counts.index, title="Experience Distribution")
+    
     # Skill Word Cloud
     all_skills = [skill for sublist in results_df['technical_skills'].str.split(', ') for skill in sublist]
     if all_skills:
         from wordcloud import WordCloud
         wordcloud = WordCloud(width=800, height=400, background_color='white').generate(' '.join(all_skills))
-        fig3, ax3 = plt.subplots(figsize=(12, 8))
-        ax3.imshow(wordcloud, interpolation='bilinear')
-        ax3.axis("off")
-        st.pyplot(fig3)
+        fig3 = px.imshow(wordcloud.to_array(), title="Skill Word Cloud")
+        fig3.update_xaxes(visible=False)
+        fig3.update_yaxes(visible=False)
+
+    # Create a subplot with 1 row and 3 columns
+    fig = make_subplots(rows=1, cols=3, subplot_titles=("University Distribution", "Experience Distribution", "Skill Word Cloud"))
+
+    fig.add_trace(fig1.data[0], row=1, col=1)
+    fig.add_trace(fig2.data[0], row=1, col=2)
+    fig.add_trace(fig3.data[0], row=1, col=3)
+
+    # Update layout for better appearance
+    fig.update_layout(showlegend=False, title_text="Candidate Analytics", height=600)
+
+    st.plotly_chart(fig)
 
     ###################### Interactive Filters #######################
     st.write("### Candidate Filtering")
